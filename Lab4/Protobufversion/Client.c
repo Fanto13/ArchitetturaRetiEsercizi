@@ -14,9 +14,17 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
-#include "message_struct.h"
+#include "message.pb-c.h"
 
 #define DIM 4096
+
+Request msg = REQUEST__INIT;
+void *buffer;
+unsigned length;
+//----------------------------------------------
+Response *response_message;
+uint8_t buf[]
+
 
 int main(int argc, char **argv) {
     /*********************************SEMPRE********************************************/
@@ -84,15 +92,27 @@ int main(int argc, char **argv) {
  * CODE CHE IL CLIENT DEVE FARE
  *
  */
-    strcpy(package.username, argv[3]);
-    strcpy(package.password, argv[4]);
-    package.value = atof(argv[5]);
 
-    if (write(sd, &package, sizeof(package)) < 0) {
+
+    //PROTOBUF WRITE
+
+    msg.username = argv[3];
+    msg.password = argv[4];
+    msg.value = atof(argv[5]);
+
+
+    length = request__get_packed_size(&msg);
+    buffer = malloc(length);
+    request__pack(&msg, buffer);
+
+
+    if (write(sd, buffer, length) < 0) {
         perror("WRITE ERROR");
         exit(6);
     }
 
+    free(buffer);
+    //END PROTOBUF WRITE
 
     /* Facciamo lo shutdown della scrittura sulla socket */
     // shutdown(sd, SHUT_WR);

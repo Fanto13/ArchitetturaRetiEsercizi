@@ -15,7 +15,7 @@
 #include <math.h>
 #include <netdb.h>
 #include <netinet/in.h>
-#include "message_struct.h"
+#include "message.pb-c.h"
 
 #define N 80
 
@@ -24,9 +24,6 @@ void handler(int s) {
     int status;
     wait(&status);
 }
-
-message package;
-response response_message;
 
 
 int main(int argc, char **argv) {

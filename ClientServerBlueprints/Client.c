@@ -9,7 +9,7 @@
  * gcc -c message.pb-c.c
  * gcc -o bolettino_neve Client.c message.pb-c.c -L/usr/lib -lprotobuf-c
  *
- * /
+ */
 
 #include <stdio.h>
 #include <stdlib.h>

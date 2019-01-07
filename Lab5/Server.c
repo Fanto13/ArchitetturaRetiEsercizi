@@ -171,7 +171,7 @@ int main(int argc, char **argv) {
 
 
             close(piped[1]);
-
+//SCRIVO SU STREAM
             close(0);
             dup(piped[0]);
             close(piped[0]);

@@ -1,8 +1,13 @@
 
 //
 // Created by giacomo on 02/12/18.
-//
 
+/*
+ * protoc-c --c_out=. nomefile.proto
+ * gcc -c message.pb-c.c
+ * gcc -o bolettino_neve Client.c message.pb-c.c -L/usr/lib -lprotobuf-c
+ *
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,15 +19,15 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
-#include "message.pb-c.h"
 
 #define DIM 4096
 
 
-//**************************************************************************
-Request msg = REQUEST__INIT;
-void *buffer;
-unsigned length;
+//************************PER SPEDIRE**************************************************
+
+
+//************************PER RICEVERE*****************************************************
+
 
 
 int main(int argc, char **argv) {
@@ -40,17 +45,19 @@ int main(int argc, char **argv) {
      * VARIBILI UTILI
      */
     char buff[DIM];
+    char end_or_month[DIM];
+    int year;
+    char c;
     int nread;
-    char regione[DIM];
 /*********************************FINE DELL'ESERCIZIO********************************************/
     /*********************************GENERAZIONE CLIENT********************************************/
     /* Controllo argomenti */
     if (argc < 2) {
-        printf("Uso: bollettino_neve <server> <porta>...\n");
+        printf("Uso: client <server> <porta> ...\n");
         exit(1);
     }
+    /****************************************************************************************/
 
-    /* Costruzione dell'indirizzo */
     /* Costruzione dell'indirizzo */
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_INET;
@@ -71,7 +78,7 @@ int main(int argc, char **argv) {
         }
         /*se connect funziona esco dal ciclo */
         if (connect(sd, ptr->ai_addr, ptr->ai_addrlen) == 0) {
-            printf("connect riuscita ");
+            printf("connect riuscita\n");
             break;
         }
 
@@ -90,40 +97,60 @@ int main(int argc, char **argv) {
  *
  * CODE CHE IL CLIENT DEVE FARE
  *
+ * EXIT DA 4 IN POI
+ *
  */
-    printf("\nInserire nome Regione: ");
-    scanf("%s", regione);
-    msg.nomeregione = regione;
-    printf("Inserire numero impinati: ");
-    scanf("%d", &msg.numero_impianti);
 
-    length = request__get_packed_size(&msg);
-    buffer = malloc(length);
-    request__pack(&msg, buffer);
+/*
+ * scanf mese (Stringa) scanf anno (Intero)
+ * write senza terminatore x 2
+ * read  senza terminatore
+ */
 
+    printf("Insert a month:> ");
+    scanf("%c", end_or_month);
 
-    if (write(sd, buffer, length) < 0) {
-        perror("WRITE ERROR");
-        exit(6);
-    }
+    while ((c = getchar()) != '\n' && c != EOF);//Pulisco standard input
 
-    free(buffer);
+    while (strcmp(end_or_month, "fine") != 0) {
 
+        printf("Insert a year:> ");
+        scanf("%d", &year);
 
-    fflush(stdout);
-//RICEZIONE STREAM
-    memset(buff, 0, sizeof(buff));
-    while ((nread = read(sd, buff, DIM)) > 0) {//LEGGO DALLO STREAM
-        if (write(1, buff, nread) < 0) {//SCRIVO SU STDOUTPUT
-            perror("ERRORE SCRITTURA SU STODUT");
-            exit(9);
+        if (write(sd, end_or_month, strlen(end_or_month)) < 0) {//Invio stringa SENZA TERMINATORE
+            perror("INVIO MESE");
+            exit(4);
         }
+
+        if (write(sd, &year, sizeof(year)) < 0) {//Invio stringa SENZA TERMINATORE
+            perror("INVIO YEAR");
+            exit(5);
+        }
+
+        //RICEZIONE STREAM
+        memset(buff, 0, sizeof(buff));
+        while ((nread = read(sd, buff, DIM)) > 0) {//LEGGO DALLO STREAM
+            if (write(1, buff, nread) < 0) {//SCRIVO SU STDOUTPUT
+                perror("ERRORE SCRITTURA SU STODUT");
+                exit(9);
+            }
+        }
+
+        printf("Insert a month:> ");
+        scanf("%c", end_or_month);
+
+        while ((c = getchar()) != '\n' && c != EOF);//Pulisco standard input
+
+
+
     }
 
-    if (nread < 0) {
-        perror("ERRORE LETTURA READ ");
+    if (write(sd, end_or_month, strlen(end_or_month)) < 0) {//Invio stringa SENZA TERMINATORE
+        perror("INVIO FINE");
         exit(10);
     }
+
+
     close(sd);
     return 0;
 }

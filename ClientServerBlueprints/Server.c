@@ -2,6 +2,14 @@
 // Created by giacomo on 02/12/18.
 //
 
+/*
+ * protoc-c --c_out=. message.proto
+ * gcc -c message.pb-c.c
+ * gcc -o server Server.c message.pb-c.c -L/usr/lib -lprotobuf-c
+ */
+
+
+
 #include <stdio.h>
 #include <errno.h>
 #include <stdlib.h>
@@ -16,6 +24,7 @@
 #include <netinet/in.h>
 
 #define N 80
+#define numero_argomenti 2
 
 /* Gestore del segnale SIGCHLD */
 void handler(int s) {
@@ -25,25 +34,27 @@ void handler(int s) {
 
 
 int main(int argc, char **argv) {
-    /******************************************SEMPRE***************************************************************/
+    /******************************************VARIBILI CREAZIONE CONNESSIONE***************************************************************/
     struct addrinfo hints, *res;//Servono sempre
-    int err, sd, ns, pid;//Servono sempre
-    /********************************************FINE SEMPRE*************************************************************/
-    /**********************************************DELL'ESERCIZIO***********************************************************/
+    int err, sd, ns, pid;
+    int on=1;//Servono sempre
+    /********************************************FINE VARIABILI CREAZIONE CONNESSIONE*************************************************************/
     /*
      *
      * DICHIARAZIONE VARIABILI UTILI
-     *
-     *
      */
-    /**********************************************FINE DELL'ESERCIZIO**********************************************************/
+
+     /*
+     * FINE DICHIARAZIONE VARIABILI UTILI
+     */
     /***********************************************GENERAZIONE SERVER*************************************************************/
     /* Controllo argomenti */
-    if (argc < 2) {
+    if (argc < numero_argomenti) {
         printf("Uso: ./server <porta> \n");
         exit(1);
     }
-
+    /*Fine controllo argomenti*/
+    //Segnale per non dover aspettare i figli
     signal(SIGCHLD, handler);
 
     memset(&hints, 0, sizeof(hints));
@@ -60,8 +71,7 @@ int main(int argc, char **argv) {
         perror("Errore in socket");
         exit(3);
     }
-
-    go = 1;
+//Dichiaro on=1 ad inizio codice
     if (setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) < 0) {
         perror("setsockopt");
         exit(4);
@@ -79,13 +89,20 @@ int main(int argc, char **argv) {
         exit(6);
     }
 
-    /*******************************************FINE GENERAZIONE SERVER**************************************************************/
 
+/*
+*sd filedescriptor di ascolto per le connessioni in entrata
+*ns filedescriptor specifico per una singola connessione, uso sempre ns perchè viene passato al figlio figlio tramite fork
+*Il figlio chiude subito sd e alla fine chiude ns
+*Il padre chiude sempre ns come prima cosa e non chiude mai sd
+*/
+    /*******************************************FINE GENERAZIONE SERVER**************************************************************/
+//######################################CICLO INFINITO DI ASCOLTO CLIENT##############################################################
 
     /* Attendo i client... */
     for (;;) {
         printf("Server in ascolto...\n");
-
+        //Accetto le connessioni
         if ((ns = accept(sd, NULL, NULL)) < 0) {
             /* Ignoro gli errori di tipo interruzione da segnale. */
             if (errno == EINTR)
@@ -112,9 +129,8 @@ int main(int argc, char **argv) {
 
 
 /*******************************************************FINE MODIFICA PER FARE COSE*********************************************************************************************/
-
-
-
+      close(ns);
+      exit(0);
         } else {
             /* padre */
             close(ns);

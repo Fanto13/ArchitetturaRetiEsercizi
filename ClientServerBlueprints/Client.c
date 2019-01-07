@@ -5,10 +5,9 @@
 
 
 /*
- * protoc-c --c_out=. nomefile.proto
+ * protoc-c --c_out=. message.proto
  * gcc -c message.pb-c.c
- * gcc -o bolettino_neve Client.c message.pb-c.c -L/usr/lib -lprotobuf-c
- *
+ * gcc -o client Client.c message.pb-c.c -L/usr/lib -lprotobuf-c
  */
 
 #include <stdio.h>
@@ -23,29 +22,36 @@
 #include <netdb.h>
 
 #define DIM 4096
+#define numero_argomenti 2
 
 int main(int argc, char **argv) {
-    /*********************************SEMPRE********************************************/
-int err;
+    /*********************************VARIABILI CREAZIONE CONNESSIONE********************************************/
+    int err;
     struct addrinfo hints;
     struct addrinfo *res;
     struct addrinfo *ptr;
     char *host_remoto;
     char *servizio_remoto;
     int sd;
-    /*********************************FINE SEMPRE********************************************/
-    /*********************************DELL'ESERCIZIO********************************************/
+    int connessione_numero;
+    /*********************************FINE VARIBILI CREAZIONE CONNESSIONE********************************************/
+
     /*
      * VARIBILI UTILI
      */
-/*********************************FINE DELL'ESERCIZIO********************************************/
+
+    /*
+     * FINE VARIABILI UTILI
+     */
+
     /*********************************GENERAZIONE CLIENT********************************************/
     /* Controllo argomenti */
-    if (argc < 2) {
-        printf("Uso: rps <server> <options>...\n");
+    if (argc < numero_argomenti) {
+        printf("Uso: rps <server> <porta>...\n");
         exit(1);
     }
-
+    /* Fine controllo numero_argomenti*/
+    //################################################CREO CONNESSIONE##########################################################################
     /* Costruzione dell'indirizzo */
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_INET;
@@ -53,7 +59,7 @@ int err;
 
     /* Risoluzione dell'host */
     host_remoto = argv[1];
-    servizio_remoto = "50000";
+    servizio_remoto = argv[2];
     if ((err = getaddrinfo(host_remoto, servizio_remoto, &hints, &res)) != 0) {
         fprintf(stderr, "Errore risoluzione nome: %s\n", gai_strerror(err));
         exit(2);
@@ -66,10 +72,10 @@ int err;
         }
         /*se connect funziona esco dal ciclo */
         if (connect(sd, ptr->ai_addr, ptr->ai_addrlen) == 0) {
-            printf("connect riuscita al tentativo %d\n", i);
+            printf("connect riuscita al tentativo %d\n", connessione_numero);
             break;
         }
-        i++;
+        connessione_numero++;
         close(sd);
     }
     /* Verifica sul risultato restituito da getaddrinfo */
@@ -80,6 +86,8 @@ int err;
 
     /* Liberiamo la memoria allocata da getaddrinfo() */
     freeaddrinfo(res);
+    //##########################################FINE CREAZIONE CONNESSIONE#####################################################################
+
 /*********************************FINE GENERAZIONE CLIENT********************************************/
 /*
  *

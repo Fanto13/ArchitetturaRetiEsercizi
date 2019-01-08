@@ -1,0 +1,10 @@
+syntax = "proto2";
+
+message RichiestaClient {
+    required string nomefile = 1;
+
+};
+
+message RispostaServer {
+    required int32 dim = 1;
+};

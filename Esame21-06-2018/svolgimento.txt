@@ -1,0 +1,8 @@
+Client richiede scanf nome file e lo invia al server
+Server ne verifica l'esistenza, se non esiste invia (-1) e resta in attesa usando la socket attiva, se esiste iniva al client la dim file
+Se client riceve (-1) richiede nuovamente nome file, Se client riceve dim e dim>soglia invia ERROR e termina altriment se dim<=soglia invia OK
+Se Server Riceve ERROR chiude socket e terimna altrimenti se riceve ok invia al client contenuto file con cat e client lo stampa a video
+
+Note
+1) nomefile e dim -->protobuf (RichiestaClient e RispostaServer)
+2)OK ERROR stringhe senza terminatore SENZA ACK PERCHè MONO STRINGA

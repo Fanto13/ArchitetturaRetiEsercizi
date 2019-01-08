@@ -20,9 +20,65 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
+//************INCLUDE PROTOBUF******************
+#include "message.pb-c.h"
+//**********************************************
 
 #define DIM 4096
-#define numero_argomenti 3
+#define numero_argomenti 2
+
+
+void proto_send_nodim(int sd, RichiestaClient *richiesta) {
+
+
+    void *buffer;
+    unsigned length;
+    length = richiesta_client__get_packed_size(richiesta);
+    buffer = malloc(length);
+    richiesta_client__pack(richiesta, buffer);
+
+
+    fprintf(stderr, "ESEGUO\n");
+
+    if ((write(sd, buffer, length)) < 0) {
+        perror("WRITE ERROR");
+        exit(6);
+    }
+
+    free(buffer);
+    fflush(stdout);
+
+}
+
+
+void proto_recive_nodim(int sd, RispostaServer *risposta) {
+    char buff[DIM];
+    int nread;
+    fprintf(stderr, "ENTRO NELLA FUNZIONE\n");
+    nread = read(sd, buff, sizeof(buff));//RICEVO
+    if (nread < 0) {
+        perror("PROTOBUF");
+        exit(5);
+    }
+    fprintf(stderr, "ENTRO NELLA FUNZIONE\n");
+
+    risposta = risposta_server__unpack(NULL, nread, buff);//DESERIALIZZO/ESTRAGGO
+    fprintf(stderr, "ENTRO NELLA FUNZIONE\n");
+    if (risposta == NULL) {
+        perror("ERRORE DESERIALIZZAZIONE");
+        exit(6);
+    }
+
+    fprintf(stderr, "%d", risposta->dim);
+
+
+}
+
+/*
+ *
+
+        */
+
 
 int main(int argc, char **argv) {
     /*********************************VARIABILI CREAZIONE CONNESSIONE********************************************/
@@ -34,12 +90,23 @@ int main(int argc, char **argv) {
     char *servizio_remoto;
     int sd;
     int connessione_numero;
+    char c;
     int nread;
+    char buff[DIM];
     /*********************************FINE VARIBILI CREAZIONE CONNESSIONE********************************************/
 
     /*
      * VARIBILI UTILI
      */
+
+    // void *buffer;
+    //unsigned length;
+    RispostaServer risposta;
+    RichiestaClient richiesta = RICHIESTA_CLIENT__INIT;
+
+
+    char tempnomefile[DIM];
+    char Stato[DIM];
 
     /*
      * FINE VARIABILI UTILI
@@ -48,7 +115,7 @@ int main(int argc, char **argv) {
     /*********************************GENERAZIONE CLIENT********************************************/
     /* Controllo argomenti */
     if (argc < numero_argomenti) {
-        printf("Uso: client <server> <porta> <soglia>...\n");
+        printf("Uso: rps <server> <porta> <soglia>...\n");
         exit(1);
     }
     /* Fine controllo numero_argomenti*/
@@ -95,6 +162,51 @@ int main(int argc, char **argv) {
  * CODE CHE IL CLIENT DEVE FARE
  *
  */
+
+    do {
+        printf("Inserire il nome del file da visualizzare:> ");
+        scanf("%s", tempnomefile);
+        while ((c = getchar()) != '\n' && c != EOF);
+
+        richiesta.nomefile = tempnomefile;// IMPORTANTE PER COPIA
+
+        proto_send_nodim(sd, &richiesta);
+
+        proto_recive_nodim(sd, &risposta);
+
+        fprintf(stderr, "CIAONE BOY");
+
+        printf("%d", risposta.dim);
+    } while (risposta.dim == -1);
+
+    if (risposta.dim > atoi(argv[3])) {
+        printf("SUPERA LA SOGLIA");
+        sprintf(Stato, "ERROR");
+        if ((write(sd, Stato, sizeof(Stato))) < 0) {
+            perror("WRITE ERROR");
+            exit(6);
+        }
+        close(sd);
+        exit(11);
+
+    } else {
+        printf("DIM ACCETTABLE");
+        sprintf(Stato, "OK");
+        if ((write(sd, Stato, sizeof(Stato))) < 0) {
+            perror("WRITE ERROR");
+            exit(6);
+        }
+
+
+        while ((nread = read(sd, buff, DIM)) > 0) {//LEGGO DALLO STREAM
+            if (write(1, buff, nread) < 0) {//SCRIVO SU STDOUTPUT
+                perror("ERRORE SCRITTURA SU STODUT");
+                exit(9);
+            }
+        }
+
+
+    }
 
     close(sd);
     return 0;

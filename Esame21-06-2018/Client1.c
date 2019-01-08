@@ -20,9 +20,12 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
+//************INCLUDE PROTOBUF******************
+#include "message.pb-c.h"
+//**********************************************
 
 #define DIM 4096
-#define numero_argomenti 3
+#define numero_argomenti 2
 
 int main(int argc, char **argv) {
     /*********************************VARIABILI CREAZIONE CONNESSIONE********************************************/
@@ -34,12 +37,21 @@ int main(int argc, char **argv) {
     char *servizio_remoto;
     int sd;
     int connessione_numero;
+    char c;
     int nread;
+    char buff[DIM];
     /*********************************FINE VARIBILI CREAZIONE CONNESSIONE********************************************/
 
     /*
      * VARIBILI UTILI
      */
+    RichiestaClient richiesta = RICHIESTA_CLIENT__INIT;
+    void *buffer;
+    unsigned length;
+
+    RispostaServer *risposta;
+
+    char tempnomefile[DIM];
 
     /*
      * FINE VARIABILI UTILI
@@ -48,7 +60,7 @@ int main(int argc, char **argv) {
     /*********************************GENERAZIONE CLIENT********************************************/
     /* Controllo argomenti */
     if (argc < numero_argomenti) {
-        printf("Uso: client <server> <porta> <soglia>...\n");
+        printf("Uso: rps <server> <porta>...\n");
         exit(1);
     }
     /* Fine controllo numero_argomenti*/
@@ -95,6 +107,40 @@ int main(int argc, char **argv) {
  * CODE CHE IL CLIENT DEVE FARE
  *
  */
+    printf("Inserire il nome del file da visualizzare:> ");
+    scanf("%s", tempnomefile);
+    while ((c = getchar()) != '\n' && c != EOF);
+
+    richiesta.nomefile = tempnomefile;// IMPORTANTE PER COPIA
+
+    length = richiesta_client__get_packed_size(&richiesta);
+    buffer = malloc(length);
+    richiesta_client__pack(&richiesta, buffer);
+
+    fprintf(stderr, "ESEGUO");
+
+    if ((write(sd, buffer, length)) < 0) {
+        perror("WRITE ERROR");
+        exit(6);
+    }
+
+    free(buffer);
+    fflush(stdout);
+
+    nread = read(sd, buff, sizeof(buff));//RICEVO
+    if (nread < 0) {
+        perror("PROTOBUF");
+        exit(5);
+    }
+
+    risposta = risposta_server__unpack(NULL, nread, buff);//DESERIALIZZO/ESTRAGGO
+    if (risposta == NULL) {
+        perror("ERRORE DESERIALIZZAZIONE");
+        exit(6);
+    }
+
+    printf("%d", risposta->dim);
+
 
     close(sd);
     return 0;

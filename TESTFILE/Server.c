@@ -44,6 +44,7 @@ int main(int argc, char **argv) {
      * DICHIARAZIONE VARIABILI UTILI
      */
     Com1 *pack;
+    Com1 risp = COM1__INIT;
     /*
     * FINE DICHIARAZIONE VARIABILI UTILI
     */
@@ -127,9 +128,18 @@ int main(int argc, char **argv) {
  *
  */
 
-            pack = proto_recive_nodim(ns);
-            printf("%d", pack->command);
-            com1__free_unpacked(pack, NULL);
+            char string1[DIM], string2[DIM];
+            strcpy(string1, "JULES");
+            strcpy(string2, "JACK");
+
+            send_with_ack(ns, string1, string2);
+
+
+
+
+
+
+
 
 /*******************************************************FINE MODIFICA PER FARE COSE*********************************************************************************************/
             close(ns);

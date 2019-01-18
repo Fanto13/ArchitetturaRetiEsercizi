@@ -36,6 +36,8 @@ int main(int argc, char **argv) {
      * VARIBILI UTILI
      */
     Com1 pack = COM1__INIT;
+    Com1 *risp;
+    char testo[DIM];
     /*
      * FINE VARIABILI UTILI
      */
@@ -91,9 +93,9 @@ int main(int argc, char **argv) {
  *
  */
 
-    pack.command = 1;
-    proto_send_nodim(sd, &pack);
-
+    char string1[DIM], string2[DIM];
+    receive_with_ack(sd, string1, string2);
+    printf("Io sono %s e %s è mio amico", string2, string1);
 
     close(sd);
     return 0;

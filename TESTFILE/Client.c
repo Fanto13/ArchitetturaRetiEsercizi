@@ -14,6 +14,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#include "comunication_tools.h"
 
 #define DIM 4096
 #define numero_argomenti 3
@@ -34,7 +35,7 @@ int main(int argc, char **argv) {
     /*
      * VARIBILI UTILI
      */
-
+    Com1 pack = COM1__INIT;
     /*
      * FINE VARIABILI UTILI
      */
@@ -89,6 +90,10 @@ int main(int argc, char **argv) {
  * CODE CHE IL CLIENT DEVE FARE
  *
  */
+
+    pack.command = 1;
+    proto_send_nodim(sd, &pack);
+
 
     close(sd);
     return 0;

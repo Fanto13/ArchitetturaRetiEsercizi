@@ -1,17 +1,15 @@
-void handler(int s) {
-    int status;
-    wait(&status);
-}
+#include "message.pb-c.h"
+#include "comunication_tools.h"
 
 
-void proto_send_nodim_server(int sd, RispostaServer *risposta) {
+void proto_send_nodim(int sd, Com1 *risposta) {
 
 
     void *buffer;
     unsigned length;
-    length = risposta_server__get_packed_size(risposta);
+    length = com1__get_packed_size(risposta);
     buffer = malloc(length);
-    risposta_server__pack(risposta, buffer);
+    com1__pack(risposta, buffer);
 
 
     fprintf(stderr, "ESEGUO\n");
@@ -48,32 +46,11 @@ void write_on_socket(int sd) {
     close(sd);
 }
 
-void proto_send_nodim_client(int sd, RichiestaClient *richiesta) {
 
-
-    void *buffer;
-    unsigned length;
-    length = richiesta_client__get_packed_size(richiesta);
-    buffer = malloc(length);
-    richiesta_client__pack(richiesta, buffer);
-
-
-    fprintf(stderr, "ESEGUO\n");
-
-    if ((write(sd, buffer, length)) < 0) {
-        perror("WRITE ERROR");
-        exit(6);
-    }
-
-    free(buffer);
-    fflush(stdout);
-
-}
-
-
-RispostaServer *proto_recive_nodim(int sd, RispostaServer *risposta) {
+Com1 *proto_recive_nodim(int sd) {
     char buff[DIM];
     int nread;
+    Com1 *risposta;
     fprintf(stderr, "ENTRO NELLA FUNZIONE\n");
     nread = read(sd, buff, sizeof(buff));//RICEVO
     if (nread < 0) {
@@ -82,14 +59,13 @@ RispostaServer *proto_recive_nodim(int sd, RispostaServer *risposta) {
     }
     fprintf(stderr, "ENTRO NELLA FUNZIONE\n");
 
-    risposta = risposta_server__unpack(NULL, nread, buff);//DESERIALIZZO/ESTRAGGO
+    risposta = com1__unpack(NULL, nread, buff);//DESERIALIZZO/ESTRAGGO
     fprintf(stderr, "ENTRO NELLA FUNZIONE\n");
     if (risposta == NULL) {
         perror("ERRORE DESERIALIZZAZIONE");
         exit(6);
     }
 
-    fprintf(stderr, "\n\nDENTRO FUNCTION VALE: %d\n\n", risposta->dim);
     return risposta;
 
 }

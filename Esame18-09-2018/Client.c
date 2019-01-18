@@ -1,9 +1,3 @@
-
-//
-// Created by giacomo on 02/12/18.
-//
-
-
 /*
  * protoc-c --c_out=. message.proto
  * gcc -c message.pb-c.c
@@ -20,25 +14,11 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
-//************INCLUDE PROTOBUF******************
-#include "message.pb-c.h"
-//**********************************************
+#include "struct.h"
 
 #define DIM 4096
+#define maxdim 31
 #define numero_argomenti 2
-
-
-/*
- *
- *            while ((nread = read(sd, buff, DIM)) > 0) {//LEGGO DALLO STREAM
-            if (write(1, buff, nread) < 0) {//SCRIVO SU STDOUTPUT
-                perror("ERRORE SCRITTURA SU STODUT");
-                exit(9);
-            }
-        }
-
-        */
-
 
 int main(int argc, char **argv) {
     /*********************************VARIABILI CREAZIONE CONNESSIONE********************************************/
@@ -50,26 +30,17 @@ int main(int argc, char **argv) {
     char *servizio_remoto;
     int sd;
     int connessione_numero;
-    char c;
     int nread;
-    char buff[DIM];
     /*********************************FINE VARIBILI CREAZIONE CONNESSIONE********************************************/
 
     /*
      * VARIBILI UTILI
      */
 
-    // void *buffer;
-    //unsigned length;
-    RispostaServer *risposta;
-    RichiestaClient richiesta = RICHIESTA_CLIENT__INIT;
+    Datidiricerca package;
+    char State[maxdim];
 
-
-    char tempnomefile[DIM];
-    char Stato[DIM];
-
-    int stop = 0;
-
+    char buff[DIM];
     /*
      * FINE VARIABILI UTILI
      */
@@ -77,7 +48,7 @@ int main(int argc, char **argv) {
     /*********************************GENERAZIONE CLIENT********************************************/
     /* Controllo argomenti */
     if (argc < numero_argomenti) {
-        printf("Uso: rps <server> <porta> <soglia>...\n");
+        printf("Uso: client <server> <porta> ...\n");
         exit(1);
     }
     /* Fine controllo numero_argomenti*/
@@ -125,58 +96,50 @@ int main(int argc, char **argv) {
  *
  */
 
-    do {
-        printf("Inserire il nome del file da visualizzare:> ");
-        scanf("%s", tempnomefile);
-        while ((c = getchar()) != '\n' && c != EOF);
-
-        richiesta.nomefile = tempnomefile;// IMPORTANTE PER COPIA
-
-        proto_send_nodim_client(sd, &richiesta);
-//************************************************************************************
-        nread = read(sd, buff, sizeof(buff));//RICEVO
-        if (nread < 0) {
-            perror("PROTOBUF");
-            exit(5);
-        }
-        fprintf(stderr, "ENTRO NELLA FUNZIONE\n");
-
-        risposta = risposta_server__unpack(NULL, nread, buff);//DESERIALIZZO/ESTRAGGO
-        fprintf(stderr, "ENTRO NELLA FUNZIONE\n");
-        if (risposta == NULL) {
-            perror("ERRORE DESERIALIZZAZIONE");
-            exit(6);
-        }
-        //****************************************************************************
-        fprintf(stderr, "FUORIFUNZIONE");
-        printf("\n%d\n\n\n", risposta->dim);
-
-        if (risposta->dim > 0)
-            stop = 1;
+    printf("Inserire un anno da ricercare: ");
+    scanf("%d", &package.anno);
+    printf("Inserire il numero di Città da ricevere: ");
+    scanf("%d", &package.N);
+    printf("Inserire la regione: ");
+    scanf("%s", package.regione);
 
 
-    } while (stop != 1);
-
-    fprintf(stderr, "\n\nESCO DAL LOOP\n\n");
-    if (risposta->dim > atoi(argv[3])) {
-        printf("SUPERA LA SOGLIA");
-
-        sprintf(Stato, "ERROR");
-        send_stringa_ben_formata(sd, Stato);
+    if ((write(sd, &package, sizeof(package))) < 0) {
+        perror("WRITE ERROR STRUCT");
+        exit(6);
+    }
 
 
+    nread = read(sd, State, sizeof(State));//RICEVO
+    if (nread < 0) {
+        perror("READ STATO");
+        exit(5);
+    }
+
+    printf("%s\n", State);
+    // printf("%d",strcmp(State,"OK\n"));
+    if (strcmp(State, "ERROR\n") == 0) {
         close(sd);
-        exit(11);
+        printf("ANNO NON TROVATO");
+        exit(0);
+    } else if (strcmp(State, "OK\n") != 0) {
+        close(sd);
+        perror("Bad State Descriptor...");
+        exit(56);
 
-    } else {
-        printf("DIM ACCETTABLE");
-        sprintf(Stato, "OK");
-        send_stringa_ben_formata(sd, Stato);
+    }
+    sprintf(State, "%s\n", "AVVIA");
+    if ((write(sd, State, sizeof(State))) < 0) {
+        perror("WRITE ERROR STATE");
+        exit(6);
+    }
 
 
-        read_from_stream(sd);
-
-
+    while ((nread = read(sd, buff, DIM)) > 0) {//LEGGO DALLO STREAM
+        if (write(1, buff, nread) < 0) {//SCRIVO SU STDOUTPUT
+            perror("ERRORE SCRITTURA SU STODUT");
+            exit(9);
+        }
     }
 
     close(sd);

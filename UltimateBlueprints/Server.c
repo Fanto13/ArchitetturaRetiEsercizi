@@ -1,4 +1,3 @@
-
 //
 // Created by giacomo on 02/12/18.
 //
@@ -24,15 +23,15 @@
 #include <netdb.h>
 #include <netinet/in.h>
 
-#include <sys/stat.h>
-//************INCLUDE PROTOBUF******************
-#include "message.pb-c.h"
-//**********************************************
 
-#define DIM 4096
+#define N 4096
 #define numero_argomenti 2
 
 /* Gestore del segnale SIGCHLD */
+void handler(int s) {
+    int status;
+    wait(&status);
+}
 
 
 int main(int argc, char **argv) {
@@ -40,27 +39,14 @@ int main(int argc, char **argv) {
     struct addrinfo hints, *res;//Servono sempre
     int err, sd, ns, pid;
     int on = 1;//Servono sempre
-    char buff[DIM];
     int nread;
+    char buff[N];
+
     /********************************************FINE VARIABILI CREAZIONE CONNESSIONE*************************************************************/
     /*
      *
      * DICHIARAZIONE VARIABILI UTILI
      */
-
-
-    RichiestaClient *richiesta;
-
-    RispostaServer risposta = RISPOSTA_SERVER__INIT;
-    void *buffer;
-    unsigned length;
-    struct stat st;
-
-    char filename[DIM];
-    int stop = 0;
-
-    char stato[DIM];
-
 
     /*
     * FINE DICHIARAZIONE VARIABILI UTILI
@@ -144,48 +130,6 @@ int main(int argc, char **argv) {
  *
  *
  */
-
-            do {
-                nread = read(ns, buff, sizeof(buff));//RICEVO
-                if (nread < 0) {
-                    perror("PROTOBUF");
-                    exit(5);
-                }
-
-                richiesta = richiesta_client__unpack(NULL, nread, buff);//DESERIALIZZO/ESTRAGGO
-                if (richiesta == NULL) {
-                    perror("ERRORE DESERIALIZZAZIONE");
-                    exit(6);
-                }
-
-                printf("%s", richiesta->nomefile);
-
-                if (stat(richiesta->nomefile, &st) == 0) {
-                    risposta.dim = st.st_size;
-                    stop = 1;
-                } else
-                    risposta.dim = -1;
-
-                proto_send_nodim_server(ns, &risposta);
-
-            } while (stop == 0);
-
-
-            fprintf(stderr, "\n\nESCO DAL LOOP\n\n");
-
-            read_stringa_ben_formata(ns, stato);
-
-
-            if (strcmp(stato, "ERROR") == 0) {
-                fprintf(stderr, "OUCH");
-                close(ns);
-                exit(1);
-            } else if (strcmp(stato, "OK") == 0) {
-                fprintf(stderr, "YAY");
-
-                write_on_socket(ns);
-                execlp("cat", "cat", richiesta->nomefile, (char *) 0);
-            }
 
 
 

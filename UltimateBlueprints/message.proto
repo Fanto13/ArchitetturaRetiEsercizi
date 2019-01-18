@@ -1,0 +1,16 @@
+syntax = "proto2";
+
+message Com1 {
+    required string nomefile = 1;
+    optional string testoaggiuntivo = 2;
+    required int32 command = 3;
+
+};
+
+message Com4 {
+    required string nomefile = 1;
+    optional string testoaggiuntivo = 2;
+    required int32 command = 3;
+    optional string directory = 4;
+
+};

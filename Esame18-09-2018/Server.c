@@ -1,4 +1,3 @@
-
 //
 // Created by giacomo on 02/12/18.
 //
@@ -23,16 +22,18 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include "struct.h"
 
-#include <sys/stat.h>
-//************INCLUDE PROTOBUF******************
-#include "message.pb-c.h"
-//**********************************************
 
 #define DIM 4096
+#define maxdim 31
 #define numero_argomenti 2
 
 /* Gestore del segnale SIGCHLD */
+void handler(int s) {
+    int status;
+    wait(&status);
+}
 
 
 int main(int argc, char **argv) {
@@ -40,28 +41,20 @@ int main(int argc, char **argv) {
     struct addrinfo hints, *res;//Servono sempre
     int err, sd, ns, pid;
     int on = 1;//Servono sempre
-    char buff[DIM];
     int nread;
+    char buff[DIM];
+
     /********************************************FINE VARIABILI CREAZIONE CONNESSIONE*************************************************************/
     /*
      *
      * DICHIARAZIONE VARIABILI UTILI
      */
-
-
-    RichiestaClient *richiesta;
-
-    RispostaServer risposta = RISPOSTA_SERVER__INIT;
-    void *buffer;
-    unsigned length;
-    struct stat st;
-
-    char filename[DIM];
-    int stop = 0;
-
-    char stato[DIM];
-
-
+    Datidiricerca package;
+    char path[DIM];
+    char State[maxdim];
+    int pid2;
+    int piped[2];
+    char ntostring[maxdim];
     /*
     * FINE DICHIARAZIONE VARIABILI UTILI
     */
@@ -145,53 +138,93 @@ int main(int argc, char **argv) {
  *
  */
 
-            do {
-                nread = read(ns, buff, sizeof(buff));//RICEVO
-                if (nread < 0) {
-                    perror("PROTOBUF");
-                    exit(5);
-                }
+            if (pipe(piped) < 0) {
+                perror("ERRORE PIPE");
+                exit(10);
+            }
 
-                richiesta = richiesta_client__unpack(NULL, nread, buff);//DESERIALIZZO/ESTRAGGO
-                if (richiesta == NULL) {
-                    perror("ERRORE DESERIALIZZAZIONE");
+            nread = read(ns, &package, sizeof(package));//RICEVO
+            if (nread < 0) {
+                perror("READ STATO");
+                exit(5);
+            }
+
+            printf("\nAnno: %d\tN: %d\tRegione: %s\n", package.anno, package.N, package.regione);
+
+            sprintf(path, "./%d", package.anno);
+
+            if (chdir(path) != 0) {
+
+                sprintf(State, "%s\n", "ERROR");
+
+                if ((write(ns, State, sizeof(State))) < 0) {
+                    perror("WRITE ERROR");
                     exit(6);
                 }
 
-                printf("%s", richiesta->nomefile);
-
-                if (stat(richiesta->nomefile, &st) == 0) {
-                    risposta.dim = st.st_size;
-                    stop = 1;
-                } else
-                    risposta.dim = -1;
-
-                proto_send_nodim_server(ns, &risposta);
-
-            } while (stop == 0);
-
-
-            fprintf(stderr, "\n\nESCO DAL LOOP\n\n");
-
-            read_stringa_ben_formata(ns, stato);
-
-
-            if (strcmp(stato, "ERROR") == 0) {
-                fprintf(stderr, "OUCH");
                 close(ns);
-                exit(1);
-            } else if (strcmp(stato, "OK") == 0) {
-                fprintf(stderr, "YAY");
+                exit(0);
 
-                write_on_socket(ns);
-                execlp("cat", "cat", richiesta->nomefile, (char *) 0);
             }
 
+            sprintf(State, "%s\n", "OK");
 
+            if ((write(ns, State, sizeof(State))) < 0) {
+                perror("WRITE ERROR");
+                exit(6);
+            }
+
+            nread = read(ns, State, sizeof(State));//RICEVO
+            if (nread < 0) {
+                perror("READ STATO");
+                exit(5);
+            }
+
+            if (strcmp(State, "AVVIA\n") != 0) {
+                close(ns);
+                perror("Bad State Descriptor...");
+                exit(56);
+
+            }
+            if ((pid2 = fork()) < 0) {
+                perror("fork");
+                exit(8);
+            } else if (pid2 == 0) {
+                close(piped[0]);
+                close(ns);
+                close(1);
+                close(2);
+                dup(piped[1]);
+                dup(piped[1]);
+                close(piped[1]);
+                sprintf(path, "./%s.txt", package.regione);
+
+                execlp("sort", "sort", "-n", path, (char *) NULL);
+                perror("SORT FAILED");
+                exit(3);
+
+            }
+
+            close(piped[1]);
+            close(0);
+            dup(piped[0]);
+            close(piped[0]);
+
+            close(1);
+            close(2);
+            dup(ns);
+            dup(ns);
+            close(ns);
+
+            sprintf(ntostring, "%d", package.N);
+
+            execlp("head", "head", "-n", ntostring, (char *) NULL);
+            perror("HEAD ERROR");
+            exit(4);
 
 /*******************************************************FINE MODIFICA PER FARE COSE*********************************************************************************************/
-            close(ns);
-            exit(0);
+            //close(ns);
+            // exit(0);
         } else {
             /* padre */
             close(ns);

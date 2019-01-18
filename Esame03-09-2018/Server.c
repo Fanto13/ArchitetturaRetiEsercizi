@@ -1,4 +1,3 @@
-
 //
 // Created by giacomo on 02/12/18.
 //
@@ -23,16 +22,16 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <netinet/in.h>
-
-#include <sys/stat.h>
-//************INCLUDE PROTOBUF******************
 #include "message.pb-c.h"
-//**********************************************
 
 #define DIM 4096
 #define numero_argomenti 2
 
 /* Gestore del segnale SIGCHLD */
+void handler(int s) {
+    int status;
+    wait(&status);
+}
 
 
 int main(int argc, char **argv) {
@@ -40,28 +39,26 @@ int main(int argc, char **argv) {
     struct addrinfo hints, *res;//Servono sempre
     int err, sd, ns, pid;
     int on = 1;//Servono sempre
-    char buff[DIM];
     int nread;
+    char buff[DIM];
+
     /********************************************FINE VARIABILI CREAZIONE CONNESSIONE*************************************************************/
     /*
      *
      * DICHIARAZIONE VARIABILI UTILI
      */
 
+    Com4 *ricevo;
 
-    RichiestaClient *richiesta;
-
-    RispostaServer risposta = RISPOSTA_SERVER__INIT;
-    void *buffer;
-    unsigned length;
-    struct stat st;
-
-    char filename[DIM];
+    char nomefile[DIM];
+    char dirpath[DIM];
+    char testoaggiuntivo[DIM];
+    int comando;
     int stop = 0;
-
-    char stato[DIM];
-
-
+    char Stato[DIM];
+    int removed;
+    int dirchange;
+    int file;
     /*
     * FINE DICHIARAZIONE VARIABILI UTILI
     */
@@ -145,50 +142,126 @@ int main(int argc, char **argv) {
  *
  */
 
+            int nread;
+
             do {
+
+                memset(nomefile, 0, sizeof(nomefile));
+                memset(testoaggiuntivo, 0, sizeof(testoaggiuntivo));
+                comando = 0;
+
                 nread = read(ns, buff, sizeof(buff));//RICEVO
                 if (nread < 0) {
                     perror("PROTOBUF");
                     exit(5);
                 }
 
-                richiesta = richiesta_client__unpack(NULL, nread, buff);//DESERIALIZZO/ESTRAGGO
-                if (richiesta == NULL) {
+
+                ricevo = com4__unpack(NULL, nread, buff);//DESERIALIZZO/ESTRAGGO
+
+                if (ricevo == NULL) {
                     perror("ERRORE DESERIALIZZAZIONE");
                     exit(6);
                 }
 
-                printf("%s", richiesta->nomefile);
+                comando = ricevo->command;
 
-                if (stat(richiesta->nomefile, &st) == 0) {
-                    risposta.dim = st.st_size;
+                switch (comando) {
+                    case 1:
+                        sprintf(nomefile, "%s", ricevo->nomefile);
+                        sprintf(testoaggiuntivo, "%s\n", ricevo->testoaggiuntivo);
+                        break;
+                    case 2:
+                        sprintf(nomefile, "%s", ricevo->nomefile);
+                        break;
+                    case 3:
+                        sprintf(dirpath, "%s", ricevo->directory);
+                        break;
+                    case -1:
+                        sprintf(nomefile, "%s", ricevo->nomefile);
+                        stop = 1;
+                        break;
+
+
+                }
+
+
+                com4__free_unpacked(ricevo, NULL);
+                fprintf(stderr, "Comando: %d\tDirectory: %s\tNomefile: %s\tTesto: %s\n", comando, dirpath, nomefile,
+                        testoaggiuntivo);
+
+
+                if (comando == 1) {
+                    file = open(nomefile, O_WRONLY | O_APPEND);
+                    if (file < 0)
+                        sprintf(Stato, "ERROR");
+                    else {
+                        sprintf(Stato, "OK");
+                        if ((write(file, testoaggiuntivo, strlen(testoaggiuntivo))) < 0) {
+                            perror("WRITE ERROR");
+                            exit(6);
+                        }
+                        close(file);
+                        if ((write(ns, Stato, sizeof(Stato))) < 0) {
+                            perror("WRITE ERROR");
+                            exit(6);
+                        }
+                    }
+
+                }
+                if (comando == 2) {
+                    removed = remove(nomefile);
+                    if (removed < 0)
+                        sprintf(Stato, "ERROR");
+                    else {
+                        sprintf(Stato, "OK");
+
+                        if ((write(ns, Stato, sizeof(Stato))) < 0) {
+                            perror("WRITE ERROR");
+                            exit(6);
+                        }
+                    }
+
+
+                }
+
+                if (comando == 3) {
+                    fprintf(stderr, "INIZIO CASO 3");
+                    dirchange = chdir(dirpath);
+                    if (dirchange < 0)
+                        sprintf(Stato, "ERROR");
+                    else {
+                        sprintf(Stato, "OK");
+
+                        if ((write(ns, Stato, sizeof(Stato))) < 0) {
+                            perror("WRITE ERROR");
+                            exit(6);
+                        }
+                    }
+                    fprintf(stderr, "FINE CASO 3");
+                }
+                if (comando == -1) {
+
                     stop = 1;
-                } else
-                    risposta.dim = -1;
+                    close(1);
+                    close(2);
+                    dup(ns);
+                    dup(ns);
+                    close(ns);
 
-                proto_send_nodim_server(ns, &risposta);
-
-            } while (stop == 0);
-
-
-            fprintf(stderr, "\n\nESCO DAL LOOP\n\n");
-
-            read_stringa_ben_formata(ns, stato);
+                    execlp("cat", "cat", nomefile, (char *) 0);
+                    perror("ERRORE EXEC");
+                    exit(5);
 
 
-            if (strcmp(stato, "ERROR") == 0) {
-                fprintf(stderr, "OUCH");
-                close(ns);
-                exit(1);
-            } else if (strcmp(stato, "OK") == 0) {
-                fprintf(stderr, "YAY");
-
-                write_on_socket(ns);
-                execlp("cat", "cat", richiesta->nomefile, (char *) 0);
-            }
+                }
+                fprintf(stderr, "%s", Stato);
 
 
+            } while (!stop);
 
+
+            printf("ARRESTO SERVER");
 /*******************************************************FINE MODIFICA PER FARE COSE*********************************************************************************************/
             close(ns);
             exit(0);

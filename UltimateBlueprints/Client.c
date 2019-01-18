@@ -20,25 +20,9 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
-//************INCLUDE PROTOBUF******************
-#include "message.pb-c.h"
-//**********************************************
 
 #define DIM 4096
-#define numero_argomenti 2
-
-
-/*
- *
- *            while ((nread = read(sd, buff, DIM)) > 0) {//LEGGO DALLO STREAM
-            if (write(1, buff, nread) < 0) {//SCRIVO SU STDOUTPUT
-                perror("ERRORE SCRITTURA SU STODUT");
-                exit(9);
-            }
-        }
-
-        */
-
+#define numero_argomenti 3
 
 int main(int argc, char **argv) {
     /*********************************VARIABILI CREAZIONE CONNESSIONE********************************************/
@@ -50,25 +34,12 @@ int main(int argc, char **argv) {
     char *servizio_remoto;
     int sd;
     int connessione_numero;
-    char c;
     int nread;
-    char buff[DIM];
     /*********************************FINE VARIBILI CREAZIONE CONNESSIONE********************************************/
 
     /*
      * VARIBILI UTILI
      */
-
-    // void *buffer;
-    //unsigned length;
-    RispostaServer *risposta;
-    RichiestaClient richiesta = RICHIESTA_CLIENT__INIT;
-
-
-    char tempnomefile[DIM];
-    char Stato[DIM];
-
-    int stop = 0;
 
     /*
      * FINE VARIABILI UTILI
@@ -77,7 +48,7 @@ int main(int argc, char **argv) {
     /*********************************GENERAZIONE CLIENT********************************************/
     /* Controllo argomenti */
     if (argc < numero_argomenti) {
-        printf("Uso: rps <server> <porta> <soglia>...\n");
+        printf("Uso: client <server> <porta> <soglia>...\n");
         exit(1);
     }
     /* Fine controllo numero_argomenti*/
@@ -124,60 +95,6 @@ int main(int argc, char **argv) {
  * CODE CHE IL CLIENT DEVE FARE
  *
  */
-
-    do {
-        printf("Inserire il nome del file da visualizzare:> ");
-        scanf("%s", tempnomefile);
-        while ((c = getchar()) != '\n' && c != EOF);
-
-        richiesta.nomefile = tempnomefile;// IMPORTANTE PER COPIA
-
-        proto_send_nodim_client(sd, &richiesta);
-//************************************************************************************
-        nread = read(sd, buff, sizeof(buff));//RICEVO
-        if (nread < 0) {
-            perror("PROTOBUF");
-            exit(5);
-        }
-        fprintf(stderr, "ENTRO NELLA FUNZIONE\n");
-
-        risposta = risposta_server__unpack(NULL, nread, buff);//DESERIALIZZO/ESTRAGGO
-        fprintf(stderr, "ENTRO NELLA FUNZIONE\n");
-        if (risposta == NULL) {
-            perror("ERRORE DESERIALIZZAZIONE");
-            exit(6);
-        }
-        //****************************************************************************
-        fprintf(stderr, "FUORIFUNZIONE");
-        printf("\n%d\n\n\n", risposta->dim);
-
-        if (risposta->dim > 0)
-            stop = 1;
-
-
-    } while (stop != 1);
-
-    fprintf(stderr, "\n\nESCO DAL LOOP\n\n");
-    if (risposta->dim > atoi(argv[3])) {
-        printf("SUPERA LA SOGLIA");
-
-        sprintf(Stato, "ERROR");
-        send_stringa_ben_formata(sd, Stato);
-
-
-        close(sd);
-        exit(11);
-
-    } else {
-        printf("DIM ACCETTABLE");
-        sprintf(Stato, "OK");
-        send_stringa_ben_formata(sd, Stato);
-
-
-        read_from_stream(sd);
-
-
-    }
 
     close(sd);
     return 0;

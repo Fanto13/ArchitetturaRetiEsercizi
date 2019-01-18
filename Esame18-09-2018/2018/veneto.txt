@@ -1,0 +1,5 @@
+45000 Rovigo Ro
+200000 Venezia Ve
+150000 Vicenza Vz
+80000 Treviso TR
+1500 Solesiono Ro

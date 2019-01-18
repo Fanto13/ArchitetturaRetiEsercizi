@@ -1,0 +1,23 @@
+N città con meno abitanti in una certa regione in un certo anno.
+head - sort (-r)
+
+Client --> scanf Anno Regione(max 14 caratteri) NumeroN
+spedire a server
+
+Server --> read e verifica esistenza directory (chdir)
+Se directory non esiste Invia ERROR e termina esecuzione altrimenti invia OK
+
+Client --> se riceve error termina altrimenti invia AVVIA
+
+Server--> invia le N città con meno abitanti e termina
+
+Client Stampa a schermo.
+Attenzione: il Client deve ricevere dal Server anche eventuali messaggi di errore! (ad
+esempio in caso di file non presente).
+
+
+
+Anno regione numero --> Struct
+
+Error Ok Avvia --> Stringhe ben formate
+

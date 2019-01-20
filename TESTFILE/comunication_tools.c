@@ -1,9 +1,15 @@
 #include "message.pb-c.h"
 #include "comunication_tools.h"
+#include "struct.h"
+
 
 
 void proto_send_nodim(int sd, Com1 *risposta) {
-
+/*
+Input
+Socket descriptor
+Protobuf struct da inviare
+*/
 
     void *buffer;
     unsigned length;
@@ -23,9 +29,13 @@ void proto_send_nodim(int sd, Com1 *risposta) {
     fflush(stdout);
 
 }
-
-void pipe_to_upper_level(int pipedesc, int sd )
-{//Nipote-->Figlio
+void pipe_to_upper_level(int pipedesc, int sd ){
+/*
+Input
+Pipe
+Socket Descriptor
+*/
+  //Nipote-->Figlio
   close(pipedesc[0]);
   close(sd);
   close(1);
@@ -35,9 +45,12 @@ void pipe_to_upper_level(int pipedesc, int sd )
 
   close(pipedesc[1]);
 }
+void pipe_from_lower_level(int pipedesc){
+  /*
+  Input
+  Socket Descriptor
+  */
 
-void pipe_from_lower_level(int pipedesc)
-{
   close(pipedesc[1]);
 
   close(0);
@@ -45,9 +58,12 @@ void pipe_from_lower_level(int pipedesc)
   close(pipedesc[0]);
 
 }
-
-
 void proto_send_dim(int sd, Com1 *risposta) {
+  /*
+  Input
+  Socket Descriptor
+  Protobuf struct da inviare
+  */
     void *buffer;
     unsigned length;
 
@@ -81,9 +97,13 @@ void proto_send_dim(int sd, Com1 *risposta) {
 // Rilascio della memoria
     free(buffer);
 }
-
-
 Com1 *proto_receive_dim(int sd) {
+  /*
+  Input
+  Socket Descriptor
+  Output
+  Protobuf struct da ricevere
+*/
     int nread;
     uint8_t buffer[DIM];
     Com1 *pack;
@@ -113,13 +133,15 @@ Com1 *proto_receive_dim(int sd) {
 
     return pack;
 }
-
-
-void read_stringa_ben_formata(int sd, char *stato) {
-
+void read_stringa_ben_formata(int sd, char *string) {
+/*
+Input
+Socket Descriptor
+Stringa da Inviare
+*/
     int nread;
 
-    nread = read(sd, stato, sizeof(stato));//RICEVO
+    nread = read(sd, string, sizeof(stato));//RICEVO
     if (nread < 0) {
         perror("READ STATO");
         exit(5);
@@ -127,17 +149,24 @@ void read_stringa_ben_formata(int sd, char *stato) {
 
 
 }
-
 void write_on_socket(int sd) {
+  /*
+  Input
+  Socket Descriptor
+  */
     close(1);
     close(2);
     dup(sd);
     dup(sd);
     close(sd);
 }
-
-
 Com1 *proto_receive_nodim(int sd) {
+  /*
+  Input
+  Socket Descriptor
+  Output
+  Protobuf struct da ricevere
+*/
     char buff[DIM];
     int nread;
     Com1 *risposta;
@@ -159,17 +188,22 @@ Com1 *proto_receive_nodim(int sd) {
     return risposta;
 
 }
-
-
 void send_stringa_ben_formata(int sd, char *string) {
-
+  /*
+  Input
+  Socket Descriptor
+  Stringa da inviare
+*/
     if ((write(sd, string, sizeof(string))) < 0) {
         perror("WRITE ERROR");
         exit(6);
     }
 }
-
 void read_from_stream(int sd) {
+  /*
+  Input
+  Socket Descriptor
+*/
     char buff[DIM];
     int nread;
     while ((nread = read(sd, buff, DIM)) > 0) {//LEGGO DALLO STREAM
@@ -179,7 +213,6 @@ void read_from_stream(int sd) {
         }
     }
 }
-
 int ricevi(int sd, char *buf, int n) {
     int i, j;
     i = recv(sd, buf, n, 0);
@@ -201,9 +234,13 @@ int ricevi(int sd, char *buf, int n) {
     } /* si assume che tutti i byte arrivino… se si verifica il fine file si esce */
     return i;
 }
-
 void receive_with_ack(int sd, char *string1, char *string2) {
-
+  /*
+  Input
+  Socket Descriptor
+  Stringa da inviare numero 1
+  Stringa da inviare numero 2
+*/
     char *ack = "ack\n";
     char localfirst[DIM], localsecond[DIM];
 
@@ -231,8 +268,13 @@ void receive_with_ack(int sd, char *string1, char *string2) {
     sprintf(string2, "%s", localsecond);
 
 }
-
 void send_with_ack(int sd, char *string1, char *string2) {
+  /*
+  Input
+  Socket Descriptor
+  Stringa da inviare numero 1
+  Stringa da inviare numero 2
+*/
     char buf[DIM];
     char *ackVer = "ack\n";
 
@@ -260,4 +302,41 @@ void send_with_ack(int sd, char *string1, char *string2) {
         exit(6);
     }
 
+}
+
+void send_struct(int sd, Struttura struct){
+  /*
+  Input
+  Socket Descriptor
+  Struttura da inviare
+  */
+      int nread;
+
+      nread = read(sd, struct, sizeof(struct));//RICEVO
+      if (nread < 0) {
+          perror("READ STRUCT");
+          exit(5);
+      }
+
+
+}
+Struttura *recive_struct(int sd){
+  /*
+  Input
+  Socket Descriptor
+  Output
+  Protobuf struct da ricevere
+*/
+int nread;
+Struttura localstruct;
+
+nread = read(sd, localstruct, sizeof(localstruct));//RICEVO
+if (nread < 0) {
+    perror("READ STATO");
+    exit(5);
+}
+
+
+
+    return localstruct;
 }

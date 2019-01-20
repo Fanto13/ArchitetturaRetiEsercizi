@@ -13,27 +13,23 @@ void com1__init
     static Com1 init_value = COM1__INIT;
     *message = init_value;
 }
-
 size_t com1__get_packed_size
         (const Com1 *message) {
     assert(message->base.descriptor == &com1__descriptor);
     return protobuf_c_message_get_packed_size((const ProtobufCMessage *) (message));
 }
-
 size_t com1__pack
         (const Com1 *message,
          uint8_t *out) {
     assert(message->base.descriptor == &com1__descriptor);
     return protobuf_c_message_pack((const ProtobufCMessage *) message, out);
 }
-
 size_t com1__pack_to_buffer
         (const Com1 *message,
          ProtobufCBuffer *buffer) {
     assert(message->base.descriptor == &com1__descriptor);
     return protobuf_c_message_pack_to_buffer((const ProtobufCMessage *) message, buffer);
 }
-
 Com1 *
 com1__unpack
         (ProtobufCAllocator *allocator,
@@ -56,27 +52,23 @@ void com4__init
     static Com4 init_value = COM4__INIT;
     *message = init_value;
 }
-
 size_t com4__get_packed_size
         (const Com4 *message) {
     assert(message->base.descriptor == &com4__descriptor);
     return protobuf_c_message_get_packed_size((const ProtobufCMessage *) (message));
 }
-
 size_t com4__pack
         (const Com4 *message,
          uint8_t *out) {
     assert(message->base.descriptor == &com4__descriptor);
     return protobuf_c_message_pack((const ProtobufCMessage *) message, out);
 }
-
 size_t com4__pack_to_buffer
         (const Com4 *message,
          ProtobufCBuffer *buffer) {
     assert(message->base.descriptor == &com4__descriptor);
     return protobuf_c_message_pack_to_buffer((const ProtobufCMessage *) message, buffer);
 }
-
 Com4 *
 com4__unpack
         (ProtobufCAllocator *allocator,
@@ -93,7 +85,6 @@ void com4__free_unpacked
     assert(message->base.descriptor == &com4__descriptor);
     protobuf_c_message_free_unpacked((ProtobufCMessage *) message, allocator);
 }
-
 static const ProtobufCFieldDescriptor com1__field_descriptors[3] =
         {
                 {

@@ -1,6 +1,5 @@
 #include "message.pb-c.h"
 #include "comunication_tools.h"
-#include "struct.h"
 
 
 
@@ -29,7 +28,8 @@ Protobuf struct da inviare
     fflush(stdout);
 
 }
-void pipe_to_upper_level(int pipedesc, int sd ){
+
+void pipe_to_upper_level(int pipedesc[], int sd) {
 /*
 Input
 Pipe
@@ -45,7 +45,8 @@ Socket Descriptor
 
   close(pipedesc[1]);
 }
-void pipe_from_lower_level(int pipedesc){
+
+void pipe_from_lower_level(int pipedesc[]) {
   /*
   Input
   Socket Descriptor
@@ -141,7 +142,7 @@ Stringa da Inviare
 */
     int nread;
 
-    nread = read(sd, string, sizeof(stato));//RICEVO
+    nread = read(sd, string, sizeof(string));//RICEVO
     if (nread < 0) {
         perror("READ STATO");
         exit(5);
@@ -304,23 +305,21 @@ void send_with_ack(int sd, char *string1, char *string2) {
 
 }
 
-void send_struct(int sd, Struttura struct){
+void send_struct(int sd, Struttura *argstruct) {
   /*
   Input
   Socket Descriptor
   Struttura da inviare
   */
-      int nread;
-
-      nread = read(sd, struct, sizeof(struct));//RICEVO
-      if (nread < 0) {
-          perror("READ STRUCT");
-          exit(5);
-      }
+    if ((write(sd, argstruct, sizeof(argstruct))) < 0) {
+        perror("WRITE ERROR");
+        exit(6);
+    }
 
 
 }
-Struttura *recive_struct(int sd){
+
+Struttura recive_struct(int sd) {
   /*
   Input
   Socket Descriptor
@@ -330,9 +329,9 @@ Struttura *recive_struct(int sd){
 int nread;
 Struttura localstruct;
 
-nread = read(sd, localstruct, sizeof(localstruct));//RICEVO
+    nread = read(sd, &localstruct, sizeof(localstruct));//RICEVO
 if (nread < 0) {
-    perror("READ STATO");
+    perror("READ STRUCT");
     exit(5);
 }
 

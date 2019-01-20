@@ -93,10 +93,13 @@ int main(int argc, char **argv) {
  *
  */
 
-    char string1[DIM], string2[DIM];
-    receive_with_ack(sd, string1, string2);
-    printf("Io sono %s e %s è mio amico", string2, string1);
+    Struttura prova;
 
+    prova.number = 5;
+    sprintf(prova.string, "YOYO PAOLO GAY");
+    fprintf(stderr, "VADO@1\n");
+    send_struct(sd, &prova);
+    fprintf(stderr, "VADO@2\n");
     close(sd);
     return 0;
 }

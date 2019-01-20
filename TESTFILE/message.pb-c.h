@@ -50,18 +50,14 @@ struct _Com4 {
 /* Com1 methods */
 void com1__init
         (Com1 *message);
-
 size_t com1__get_packed_size
         (const Com1 *message);
-
 size_t com1__pack
         (const Com1 *message,
          uint8_t *out);
-
 size_t com1__pack_to_buffer
         (const Com1 *message,
          ProtobufCBuffer *buffer);
-
 Com1 *
 com1__unpack
         (ProtobufCAllocator *allocator,
@@ -71,22 +67,17 @@ com1__unpack
 void com1__free_unpacked
         (Com1 *message,
          ProtobufCAllocator *allocator);
-
 /* Com4 methods */
 void com4__init
         (Com4 *message);
-
 size_t com4__get_packed_size
         (const Com4 *message);
-
 size_t com4__pack
         (const Com4 *message,
          uint8_t *out);
-
 size_t com4__pack_to_buffer
         (const Com4 *message,
          ProtobufCBuffer *buffer);
-
 Com4 *
 com4__unpack
         (ProtobufCAllocator *allocator,
@@ -96,13 +87,11 @@ com4__unpack
 void com4__free_unpacked
         (Com4 *message,
          ProtobufCAllocator *allocator);
-
 /* --- per-message closures --- */
 
 typedef void (*Com1_Closure)
         (const Com1 *message,
          void *closure_data);
-
 typedef void (*Com4_Closure)
         (const Com4 *message,
          void *closure_data);

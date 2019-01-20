@@ -129,10 +129,10 @@ int main(int argc, char **argv) {
  */
 
             char string1[DIM], string2[DIM];
-            strcpy(string1, "JULES");
-            strcpy(string2, "JACK");
 
-            send_with_ack(ns, string1, string2);
+            Struttura mystruct;
+            mystruct = recive_struct(ns);
+            printf("%d\t%s", mystruct.number, mystruct.string);
 
 
 

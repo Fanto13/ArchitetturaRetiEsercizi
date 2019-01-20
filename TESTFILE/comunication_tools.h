@@ -28,16 +28,17 @@ read/write on stream        OK
 ----------------------------------
 DA TESTARE:
 Pipe da e verso             TEST
-----------------------------------
+STRUCT                      TEST
+ ----------------------------------
 DA FARE:
-STRUCT
 Stringa lunghezza variabile
 */
 
 int ricevi(int sd, char *buf, int n);
 
-void pipe_to_upper_level(int pipedesc, int sd );
-void pipe_from_lower_level(int pipedesc);
+void pipe_to_upper_level(int pipedesc[], int sd);
+
+void pipe_from_lower_level(int pipedesc[]);
 
 void proto_send_nodim(int sd, Com1 *risposta);
 Com1 *proto_receive_nodim(int sd);
@@ -54,5 +55,6 @@ void receive_with_ack(int sd, char *string1, char *string2);
 void write_on_socket(int sd);
 void read_from_stream(int sd);
 
-void send_struct(int sd, Struttura struct);
-Struttura *recive_struct(int sd);
+void send_struct(int sd, Struttura *argstruct);
+
+Struttura recive_struct(int sd);

@@ -16,6 +16,10 @@
 
 #include "message.pb-c.h"
 
+void pipe_to_upper_level(int pipedesc, int sd );
+
+void pipe_from_lower_level(int pipedesc);
+
 int ricevi(int sd, char *buf, int n);
 
 void proto_send_nodim(int sd, Com1 *risposta);

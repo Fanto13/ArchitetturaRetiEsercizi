@@ -24,6 +24,29 @@ void proto_send_nodim(int sd, Com1 *risposta) {
 
 }
 
+void pipe_to_upper_level(int pipedesc, int sd )
+{//Nipote-->Figlio
+  close(pipedesc[0]);
+  close(sd);
+  close(1);
+  close(2);
+  dup(pipedesc[1]);
+  dup(pipedesc[1]);
+
+  close(pipedesc[1]);
+}
+
+void pipe_from_lower_level(int pipedesc)
+{
+  close(pipedesc[1]);
+
+  close(0);
+  dup(pipedesc[0]);
+  close(pipedesc[0]);
+
+}
+
+
 void proto_send_dim(int sd, Com1 *risposta) {
     void *buffer;
     unsigned length;

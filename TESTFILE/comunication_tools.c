@@ -1,8 +1,58 @@
 #include "message.pb-c.h"
 #include "comunication_tools.h"
 
+int ricevi(int sd, char *buf, int n) {
+    int i, j;
+    i = recv(sd, buf, n, 0);
+    if (i != n && i != 0) {
+        if (i == -1) {
+            fprintf(stderr, "errore in lettura\n");
+            exit(1);
+        }
+        while (i < n) {
+            j = recv(sd, &buf[i], n - i, 0);
+            if (j == -1) {
+                fprintf(stderr, "errore in lettura\n");
+                exit(1);
+            }
+            i += j;
+            if (j == 0)
+                break;
+        }
+    } /* si assume che tutti i byte arrivino… se si verifica il fine file si esce */
+    return i;
+}
+//------------------------------------------------------
+void pipe_to_upper_level(int pipedesc[], int sd) {
+/*
+Input
+Pipe
+Socket Descriptor
+*/
+  //Nipote-->Figlio
+  close(pipedesc[0]);
+  close(sd);
+  close(1);
+  close(2);
+  dup(pipedesc[1]);
+  dup(pipedesc[1]);
 
+  close(pipedesc[1]);
+}
+void pipe_from_lower_level(int pipedesc[]) {
+  /*
+  Input
+  Socket Descriptor
+  */
 
+  close(pipedesc[1]);
+
+  close(0);
+  dup(pipedesc[0]);
+  close(pipedesc[0]);
+
+}
+//------------------------------------------------------
 void proto_send_nodim(int sd, Com1 *risposta) {
 /*
 Input
@@ -28,38 +78,35 @@ Protobuf struct da inviare
     fflush(stdout);
 
 }
-
-void pipe_to_upper_level(int pipedesc[], int sd) {
-/*
-Input
-Pipe
-Socket Descriptor
-*/
-  //Nipote-->Figlio
-  close(pipedesc[0]);
-  close(sd);
-  close(1);
-  close(2);
-  dup(pipedesc[1]);
-  dup(pipedesc[1]);
-
-  close(pipedesc[1]);
-}
-
-void pipe_from_lower_level(int pipedesc[]) {
+Com1 *proto_receive_nodim(int sd) {
   /*
   Input
   Socket Descriptor
-  */
+  Output
+  Protobuf struct da ricevere
+*/
+    char buff[DIM];
+    int nread;
+    Com1 *risposta;
+    fprintf(stderr, "ENTRO NELLA FUNZIONE\n");
+    nread = read(sd, buff, sizeof(buff));//RICEVO
+    if (nread < 0) {
+        perror("PROTOBUF");
+        exit(5);
+    }
+    fprintf(stderr, "ENTRO NELLA FUNZIONE\n");
 
-  close(pipedesc[1]);
+    risposta = com1__unpack(NULL, nread, buff);//DESERIALIZZO/ESTRAGGO
+    fprintf(stderr, "ENTRO NELLA FUNZIONE\n");
+    if (risposta == NULL) {
+        perror("ERRORE DESERIALIZZAZIONE");
+        exit(6);
+    }
 
-  close(0);
-  dup(pipedesc[0]);
-  close(pipedesc[0]);
+    return risposta;
 
 }
-
+//------------------------------------------------------
 void proto_send_dim(int sd, Com1 *risposta) {
   /*
   Input
@@ -135,22 +182,121 @@ Com1 *proto_receive_dim(int sd) {
 
     return pack;
 }
-void read_stringa_ben_formata(int sd, char *string) {
+//------------------------------------------------------
+void read_stringa_dim_fissa(int sd, char *string) {
 /*
 Input
 Socket Descriptor
 Stringa da Inviare
 */
     int nread;
-
     nread = read(sd, string, sizeof(string));//RICEVO
     if (nread < 0) {
         perror("READ STATO");
         exit(5);
     }
-
+}
+void send_stringa_dim_fissa(int sd, char *string) {
+  /*
+  Input
+  Socket Descriptor
+  Stringa da inviare
+*/
+    if ((write(sd, string, sizeof(string))) < 0) {
+        perror("WRITE ERROR");
+        exit(6);
+    }
+}
+//------------------------------------------------------
+void read_stringa_senza_terminatore(int sd, char *string) {
+  int nread;
+  nread = read(sd, string, DIM-1);//RICEVO
+  if (nread < 0) {
+      perror("READ STATO");
+      exit(5);
+  }
+  }
+void send_stringa_senza_terminatore(int sd, char *string) {
+  if ((write(sd, string, strlen(string))) < 0) {
+      perror("WRITE ERROR");
+      exit(6);
+  }
+}
+//------------------------------------------------------
+void send_stringa_con_terminatore(int sd, char *string) {
+  if ((write(sd, string, strlen(string)+1)) < 0) {
+      perror("WRITE ERROR");
+      exit(6);
+  }
+}
+void read_stringa_con_terminatore(int sd, char *string) {
+  int nread;
+  nread = read(sd, string, DIM-1);//RICEVO
+  if (nread < 0) {
+      perror("READ STATO");
+      exit(5);
+  }
+  }
+//------------------------------------------------------
+void send_with_ack(int sd, char *string1, char *string2) {
+  /*
+  Input
+  Socket Descriptor
+  Stringa da inviare numero 1
+  Stringa da inviare numero 2
+*/
+    char buf[DIM];
+    char *ackVer = "ack\n";
+    if (write(sd, string1, strlen(string1)) < 0) {
+        perror("write str_anno");
+        exit(6);
+    }
+// Leggo e verifico l'ack
+    memset(buf, 0, sizeof(buf));
+    if (read(sd, buf, DIM) < 0) {
+        perror("read ack");
+        exit(6);
+    }
+    if (strcmp(buf, ackVer) != 0) {
+        close(sd);
+        printf("errore nell'ack\n");
+        exit(1);
+    }
+// Mando il mese al server
+    if (write(sd, string2, strlen(string2)) < 0) {
+        perror("write mese");
+        exit(6);
+    }
 
 }
+void receive_with_ack(int sd, char *string1, char *string2) {
+  /*
+  Input
+  Socket Descriptor
+  Stringa da inviare numero 1
+  Stringa da inviare numero 2
+*/
+    char *ack = "ack\n";
+    char localfirst[DIM], localsecond[DIM];
+    memset(localfirst, 0, sizeof(localfirst));
+    if (read(sd, localfirst, DIM - 1) < 0) {
+        perror("read anno");
+        exit(9);
+    }
+// invio ack
+    if (write(sd, ack, strlen(ack)) < 0) {
+        perror("write ack");
+        exit(10);
+    }
+    memset(localsecond, 0, sizeof(localsecond));
+    if (read(sd, localsecond, DIM - 1) < 0) {
+        perror("read mese");
+        exit(9);
+    }
+    sprintf(string1, "%s", localfirst);
+    sprintf(string2, "%s", localsecond);
+}
+//------------------------------------------------------
 void write_on_socket(int sd) {
   /*
   Input
@@ -161,45 +307,6 @@ void write_on_socket(int sd) {
     dup(sd);
     dup(sd);
     close(sd);
-}
-Com1 *proto_receive_nodim(int sd) {
-  /*
-  Input
-  Socket Descriptor
-  Output
-  Protobuf struct da ricevere
-*/
-    char buff[DIM];
-    int nread;
-    Com1 *risposta;
-    fprintf(stderr, "ENTRO NELLA FUNZIONE\n");
-    nread = read(sd, buff, sizeof(buff));//RICEVO
-    if (nread < 0) {
-        perror("PROTOBUF");
-        exit(5);
-    }
-    fprintf(stderr, "ENTRO NELLA FUNZIONE\n");
-
-    risposta = com1__unpack(NULL, nread, buff);//DESERIALIZZO/ESTRAGGO
-    fprintf(stderr, "ENTRO NELLA FUNZIONE\n");
-    if (risposta == NULL) {
-        perror("ERRORE DESERIALIZZAZIONE");
-        exit(6);
-    }
-
-    return risposta;
-
-}
-void send_stringa_ben_formata(int sd, char *string) {
-  /*
-  Input
-  Socket Descriptor
-  Stringa da inviare
-*/
-    if ((write(sd, string, sizeof(string))) < 0) {
-        perror("WRITE ERROR");
-        exit(6);
-    }
 }
 void read_from_stream(int sd) {
   /*
@@ -219,97 +326,7 @@ void read_from_stream(int sd) {
     write(1, "CRIVO", strlen("CRIVO"));
     printf("\n\nFINE\n\n");
 }
-int ricevi(int sd, char *buf, int n) {
-    int i, j;
-    i = recv(sd, buf, n, 0);
-    if (i != n && i != 0) {
-        if (i == -1) {
-            fprintf(stderr, "errore in lettura\n");
-            exit(1);
-        }
-        while (i < n) {
-            j = recv(sd, &buf[i], n - i, 0);
-            if (j == -1) {
-                fprintf(stderr, "errore in lettura\n");
-                exit(1);
-            }
-            i += j;
-            if (j == 0)
-                break;
-        }
-    } /* si assume che tutti i byte arrivino… se si verifica il fine file si esce */
-    return i;
-}
-void receive_with_ack(int sd, char *string1, char *string2) {
-  /*
-  Input
-  Socket Descriptor
-  Stringa da inviare numero 1
-  Stringa da inviare numero 2
-*/
-    char *ack = "ack\n";
-    char localfirst[DIM], localsecond[DIM];
-
-//ricevo anno
-    memset(localfirst, 0, sizeof(localfirst));
-    if (read(sd, localfirst, DIM - 1) < 0) {
-        perror("read anno");
-        exit(9);
-    }
-
-// invio ack
-    if (write(sd, ack, strlen(ack)) < 0) {
-        perror("write ack");
-        exit(10);
-    }
-
-// ricevo mese
-    memset(localsecond, 0, sizeof(localsecond));
-    if (read(sd, localsecond, DIM - 1) < 0) {
-        perror("read mese");
-        exit(9);
-    }
-
-    sprintf(string1, "%s", localfirst);
-    sprintf(string2, "%s", localsecond);
-
-}
-void send_with_ack(int sd, char *string1, char *string2) {
-  /*
-  Input
-  Socket Descriptor
-  Stringa da inviare numero 1
-  Stringa da inviare numero 2
-*/
-    char buf[DIM];
-    char *ackVer = "ack\n";
-
-
-    if (write(sd, string1, strlen(string1)) < 0) {
-        perror("write str_anno");
-        exit(6);
-    }
-
-// Leggo e verifico l'ack
-    memset(buf, 0, sizeof(buf));
-    if (read(sd, buf, DIM) < 0) {
-        perror("read ack");
-        exit(6);
-    }
-    if (strcmp(buf, ackVer) != 0) {
-        close(sd);
-        printf("errore nell'ack\n");
-        exit(1);
-    }
-
-// Mando il mese al server
-    if (write(sd, string2, strlen(string2)) < 0) {
-        perror("write mese");
-        exit(6);
-    }
-
-}
-
+//------------------------------------------------------
 void send_struct(int sd, Struttura *argstruct) {
   /*
   Input
@@ -323,7 +340,6 @@ void send_struct(int sd, Struttura *argstruct) {
 
 
 }
-
 Struttura recive_struct(int sd) {
   /*
   Input

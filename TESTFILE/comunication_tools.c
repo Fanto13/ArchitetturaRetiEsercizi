@@ -59,6 +59,7 @@ void pipe_from_lower_level(int pipedesc[]) {
   close(pipedesc[0]);
 
 }
+
 void proto_send_dim(int sd, Com1 *risposta) {
   /*
   Input
@@ -207,12 +208,16 @@ void read_from_stream(int sd) {
 */
     char buff[DIM];
     int nread;
+    printf("ENTRO READ");
+    printf("ENTRO READ");
     while ((nread = read(sd, buff, DIM)) > 0) {//LEGGO DALLO STREAM
         if (write(1, buff, nread) < 0) {//SCRIVO SU STDOUTPUT
             perror("ERRORE SCRITTURA SU STODUT");
             exit(9);
         }
     }
+    write(1, "CRIVO", strlen("CRIVO"));
+    printf("\n\nFINE\n\n");
 }
 int ricevi(int sd, char *buf, int n) {
     int i, j;

@@ -127,18 +127,37 @@ int main(int argc, char **argv) {
  *
  *
  */
+            int pid2;
+            int piped[2];
 
-            char string1[DIM], string2[DIM];
-
-            Struttura mystruct;
-            mystruct = recive_struct(ns);
-            printf("%d\t%s", mystruct.number, mystruct.string);
-
-
-
+            if (pipe(piped) < 0) {
+                perror("ERRORE PIPE");
+                exit(10);
+            }
 
 
+            if ((pid2 = fork()) < 0) {
+                perror("fork");
+                exit(8);
+            } else if (pid2 == 0) {
 
+                fprintf(stderr, "NIPOTE");
+                pipe_to_upper_level(piped, ns);
+
+                execlp("cat", "cat", "./test.txt", (char *) 0);
+                perror("EXEC");
+                exit(1);
+            }
+
+            fprintf(stderr, "FIGLIO");
+
+            pipe_from_lower_level(piped);
+
+            write_on_socket(ns);
+
+            execlp("head", "head", (char *) 0);
+            perror("EXEC");
+            exit(1);
 
 
 /*******************************************************FINE MODIFICA PER FARE COSE*********************************************************************************************/

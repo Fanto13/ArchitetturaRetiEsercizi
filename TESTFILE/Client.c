@@ -93,13 +93,7 @@ int main(int argc, char **argv) {
  *
  */
 
-    Struttura prova;
-
-    prova.number = 5;
-    sprintf(prova.string, "YOYO PAOLO GAY");
-    fprintf(stderr, "VADO@1\n");
-    send_struct(sd, &prova);
-    fprintf(stderr, "VADO@2\n");
+    read_from_stream(sd);
     close(sd);
     return 0;
 }

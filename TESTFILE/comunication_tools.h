@@ -25,11 +25,11 @@ proto send/recive no dim    OK
 send/recive ben formata     OK
 send/recive ack             OK
 read/write on stream        OK
+STRUCT                      OK
+Pipe da e verso             OK
 ----------------------------------
 DA TESTARE:
-Pipe da e verso             TEST
-STRUCT                      TEST
- ----------------------------------
+----------------------------------
 DA FARE:
 Stringa lunghezza variabile
 */
@@ -37,7 +37,6 @@ Stringa lunghezza variabile
 int ricevi(int sd, char *buf, int n);
 
 void pipe_to_upper_level(int pipedesc[], int sd);
-
 void pipe_from_lower_level(int pipedesc[]);
 
 void proto_send_nodim(int sd, Com1 *risposta);
@@ -54,6 +53,7 @@ void receive_with_ack(int sd, char *string1, char *string2);
 
 void write_on_socket(int sd);
 void read_from_stream(int sd);
+
 
 void send_struct(int sd, Struttura *argstruct);
 
